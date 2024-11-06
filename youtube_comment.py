@@ -3,6 +3,7 @@ from playwright.async_api import async_playwright
 import pandas as pd
 from langdetect import detect, LangDetectException
 import time
+import matplotlib.pyplot as plt
 
 async def scrape_youtube_comments(video_url, max_comments=100):
     async with async_playwright() as p:
@@ -55,6 +56,16 @@ async def scrape_youtube_comments(video_url, max_comments=100):
             group.to_csv(f"youtube_comments_{lang}.csv", index=False)
         
         print("댓글 수집 및 언어별 분류 완료")
+
+        # 언어별 댓글 수 시각화
+        lang_counts = df['Language'].value_counts()
+        plt.figure(figsize=(10, 6))
+        lang_counts.plot(kind='bar')
+        plt.title("Number of Comments by Language")
+        plt.xlabel("Language")
+        plt.ylabel("Number of Comments")
+        plt.xticks(rotation=45)
+        plt.show()
 
 # 실행 코드
 video_url = "https://www.youtube.com/watch?v=DbXMjAYSa68"

@@ -5,7 +5,7 @@ from langdetect import detect, LangDetectException
 import time
 import matplotlib.pyplot as plt
 
-async def scrape_youtube_comments(video_url, max_comments=100):
+async def scrape_youtube_comments(video_url, max_comments=500):
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=False)
         page = await browser.new_page()
@@ -21,6 +21,18 @@ async def scrape_youtube_comments(video_url, max_comments=100):
         
         # 스크롤을 통해 댓글을 로드하면서 수집
         while len(comments) < max_comments:
+            # 스크롤을 아래로 내린 후 대기
+            await page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
+            time.sleep(1)  # 1초 대기
+            
+            # 스크롤을 다시 위로 올려서 댓글 로딩을 유도
+            await page.evaluate("window.scrollBy(0, -1000)")
+            time.sleep(1)  # 1초 대기
+            
+            await page.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
+            time.sleep(1)  # 1초 대기
+            
+            # 현재 페이지의 댓글 요소 가져오기
             comment_elements = await page.query_selector_all("#content-text")
             
             for comment in comment_elements[len(comments):]:
@@ -30,11 +42,8 @@ async def scrape_youtube_comments(video_url, max_comments=100):
                 if len(comments) >= max_comments:
                     break
 
-            # 스크롤을 위아래로 반복하여 댓글이 제대로 로드되도록 유도
-            await page.evaluate("window.scrollBy(0, 1000)")
-            time.sleep(1)
-            await page.evaluate("window.scrollBy(0, -500)")
-            time.sleep(1)
+            # 댓글 수 확인 출력
+            print('comments length =', len(comments))
 
         await browser.close()
         
